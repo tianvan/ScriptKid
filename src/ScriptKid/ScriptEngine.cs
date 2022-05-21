@@ -4,6 +4,7 @@ using System.Runtime.Loader;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
+using Microsoft.Extensions.Logging;
 
 using ScriptKid;
 
@@ -14,12 +15,14 @@ public class ScriptEngine : IScriptEngine
     private readonly IScriptFormatter _scriptFormatter;
     private readonly IScriptDigestComputer _scriptDigestComputer;
     private readonly ICompilationInfoStorage _compilationInfoStorage;
+    private readonly ILogger<ScriptEngine> _logger;
 
-    public ScriptEngine(IScriptFormatter scriptFormatter, IScriptDigestComputer scriptDigestComputer, ICompilationInfoStorage compilationInfoStorage)
+    public ScriptEngine(IScriptFormatter scriptFormatter, IScriptDigestComputer scriptDigestComputer, ICompilationInfoStorage compilationInfoStorage, ILogger<ScriptEngine> logger)
     {
         _scriptFormatter = scriptFormatter;
         _scriptDigestComputer = scriptDigestComputer;
         _compilationInfoStorage = compilationInfoStorage;
+        _logger = logger;
     }
 
     public async Task<TResult> RunAsync<TResult>(string script, object? globals = default)
@@ -36,10 +39,12 @@ public class ScriptEngine : IScriptEngine
         }
 
         MemoryStream compilationSteam = Compile<TResult>(formattedScript, globals);
+
         var compilationInfo = new CompilationInfo(digest, compilationSteam.ToArray());
         var saved = await _compilationInfoStorage.TrySaveAsync(compilationInfo);
         if (!saved)
         {
+            _logger.LogWarning("Save CompilationInfo failed. the {compilation} is existed.", digest);
             throw new InvalidOperationException("Save CompilationInfo failed.");
         }
 

@@ -1,4 +1,6 @@
 ﻿
+using System.Runtime.CompilerServices;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 
@@ -31,6 +33,7 @@ public class CompilationInfoStorage : ICompilationInfoStorage
         return new ValueTask<bool>(true);
     }
 
+    [MethodImpl(MethodImplOptions.Synchronized)]
     public ValueTask<bool> TrySaveAsync(CompilationInfo compilationInfo)
     {
         var path = Path.Combine(_scriptEngineOptions.ScriptsPath, compilationInfo.ScriptDigest);
