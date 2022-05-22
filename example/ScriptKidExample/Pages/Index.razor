@@ -19,7 +19,7 @@
 <button type="button" class="btn btn-warning position-relative" @onclick="CollectionGC">
     Collect GC
      <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-         @WorkingSet
+         PS: @WorkingSet GC: @GCMemory
   </span>
 </button>
 
@@ -38,6 +38,9 @@
     [Parameter]
     public string? WorkingSet { get; set; }
 
+    [Parameter]
+    public string? GCMemory{ get; set; }
+
     protected override async Task OnInitializedAsync()
     {
         await base.OnInitializedAsync();
@@ -45,10 +48,12 @@
         {
             await InvokeAsync(() =>
             {
-                WorkingSet = GetWorkingSet();
+                WorkingSet = GetProcessMemory();
+                GCMemory = GetGCMemory();
             });
         }, null, 0, 1000);
-        WorkingSet = GetWorkingSet();
+        WorkingSet = GetProcessMemory();
+        GCMemory = GetGCMemory();
     }
 
     public async Task RunAsync()
@@ -76,7 +81,13 @@
         }
     }
 
-    public string GetWorkingSet()
+    public string GetGCMemory()
+    {
+        var gcMemory = GC.GetTotalMemory(false);
+        return $"{gcMemory / 1024 / 1024} MB";
+    }
+
+    public string GetProcessMemory()
     {
         var workingSet = Process.GetCurrentProcess().WorkingSet64;
         return $"{workingSet / 1024 / 1024} MB";
