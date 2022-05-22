@@ -1,0 +1,105 @@
+name: "CI"
+on:
+  push:
+    # Publish `master` as Docker `latest` image.
+    branches:
+      - master
+
+    # Publish `v1.2.3` tags as releases.
+    tags:
+      - v*
+      
+  workflow_dispatch:
+    inputs:
+      logLevel:
+        description: 'Log level'     
+        required: true
+        default: 'warning'
+      tags:
+        description: 'manual trigger'
+
+  # Run tests for any PRs.
+  pull_request:
+
+env:
+  REGISTRY: ghcr.io
+  SECRET_NAME: ghcr
+  IMAGE_NAME: ScriptKit
+
+jobs:
+  # Push image to GitHub Packages.
+  # See also https://docs.docker.com/docker-hub/builds/
+  push:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build image
+        run: docker build . --file ./example/ScriptKitExample/Dockerfile --tag $IMAGE_NAME
+
+      - name: Log into GitHub Container Registry
+        # TODO: Create a PAT with `read:packages` and `write:packages` scopes and save it as an Actions secret `CR_PAT`
+        run: echo "${{ secrets.CR_PAT }}" | docker login $REGISTRY -u ${{ github.actor }} --password-stdin
+
+      - name: Push image to GitHub Container Registry
+        id: push_image
+        run: |
+          IMAGE_ID=$REGISTRY/${{ github.repository_owner }}/$IMAGE_NAME
+          # Change all uppercase to lowercase
+          IMAGE_ID=$(echo $IMAGE_ID | tr '[A-Z]' '[a-z]')
+          # Strip git ref prefix from version
+          VERSION=$(echo "${{ github.ref }}" | sed -e 's,.*/\(.*\),\1,')
+          # Strip "v" prefix from tag name
+          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
+          # Use Docker `latest` tag convention
+          [ "$VERSION" == "master" ] && VERSION=latest
+          SHORT_SHA=$(git rev-parse --short ${{github.sha}})
+          echo IMAGE_ID=$IMAGE_ID
+          echo VERSION=$VERSION
+          echo SHORT_SHA=$SHORT_SHA
+          docker tag $IMAGE_NAME $IMAGE_ID:$VERSION
+          docker tag $IMAGE_NAME $IMAGE_ID:$SHORT_SHA
+          docker push $IMAGE_ID:$VERSION
+          docker push $IMAGE_ID:$SHORT_SHA
+          echo ::set-output name=image_id::$IMAGE_ID
+          echo ::set-output name=short_sha::$SHORT_SHA
+    outputs:
+        image_id: ${{ steps.push_image.outputs.image_id }}
+        short_sha: ${{ steps.push_image.outputs.short_sha }}
+
+  deploy:
+    needs: push
+
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push'
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Set kubernetes context
+        uses: azure/k8s-set-context@v1
+        with:
+          method: kubeconfig
+          kubeconfig: ${{ secrets.KUBECONFIG }} # Use secret (https://developer.github.com/actions/managing-workflows/storing-secrets/)
+          context: kubernetes-admin@kubernetes #If left unspecified, current-context from kubeconfig is used as default
+
+      - name: Set imagePullSecret
+        uses: azure/k8s-create-secret@v1
+        with:
+          namespace: default
+          container-registry-url: ${{ env.REGISTRY }}
+          container-registry-username: ${{ github.actor }}
+          container-registry-password: ${{ secrets.CR_PAT }}
+          secret-name: ${{ env.SECRET_NAME }}
+
+      - name: Deploy to cluster
+        uses: Azure/k8s-deploy@v1.2
+        with:
+          namespace: default
+          manifests: |
+            example/ScriptKitExample/Manifests/deployment.yml
+            exampl/ScriptKitExample/Manifests/service.yml
+            example/ScriptKitExample/Manifests/ingress.yml
+          images: ${{ needs.push.outputs.image_id }}:${{ needs.push.outputs.short_sha }}
+          imagepullsecrets: |
+            ${{ env.SECRET_NAME }}
