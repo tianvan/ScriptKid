@@ -4,7 +4,7 @@ namespace Microsoft.Extensions.DependencyInjection;
 
 public static class ServiceCollectionExtensions
 {
-    public static IServiceCollection AddScriptKit(this IServiceCollection services)
+    public static IServiceCollection AddScriptKid(this IServiceCollection services)
     {
         services.AddOptions<ScriptEngineOptions>();
         services.AddSingleton<IScriptFormatter, ScriptFormatter>();
