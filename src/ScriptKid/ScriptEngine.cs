@@ -1,4 +1,5 @@
 ﻿using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.Loader;
 
 using Microsoft.CodeAnalysis;
@@ -52,9 +53,10 @@ public class ScriptEngine : IScriptEngine
 
     private MemoryStream Compile<TResult>(string formattedScript, object? globals)
     {
+        ScriptOptions? scriptOptions = ScriptOptions.Default.WithOptimizationLevel(OptimizationLevel.Release);
         Script<TResult> script = globals is null
-            ? CSharpScript.Create<TResult>(formattedScript, ScriptOptions.Default)
-            : CSharpScript.Create<TResult>(formattedScript, ScriptOptions.Default, globals!.GetType());
+            ? CSharpScript.Create<TResult>(formattedScript, scriptOptions)
+            : CSharpScript.Create<TResult>(formattedScript, scriptOptions, globals!.GetType());
 
         Compilation compilation = script.GetCompilation();
         var stream = new MemoryStream();
@@ -63,6 +65,7 @@ public class ScriptEngine : IScriptEngine
         return stream;
     }
 
+    [MethodImpl(MethodImplOptions.NoInlining)]
     private async Task<TResult> RunAsyncCore<TResult>(Stream assemblyStream, object? globals)
     {
         if (assemblyStream is null) throw new ArgumentNullException(nameof(assemblyStream));
