@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: script-kit
+  labels:
+      app: script-kit
+spec:
+  selector:
+    matchLabels:
+      app: script-kit
+  template:
+    metadata:
+      labels:
+        app: script-kit
+    spec:
+      imagePullSecrets:
+          - name: ghcr
+      containers:
+      - name: script-kit
+        image: ghcr.io/tianvan/script-kit:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 80
