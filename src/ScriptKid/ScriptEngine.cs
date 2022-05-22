@@ -63,7 +63,7 @@ public class ScriptEngine : IScriptEngine
         return stream;
     }
 
-    private Task<TResult> RunAsyncCore<TResult>(Stream assemblyStream, object? globals)
+    private async Task<TResult> RunAsyncCore<TResult>(Stream assemblyStream, object? globals)
     {
         if (assemblyStream is null) throw new ArgumentNullException(nameof(assemblyStream));
 
@@ -77,9 +77,10 @@ public class ScriptEngine : IScriptEngine
         {
             new object?[] { globals, null }
         };
-        var task = entryPoint.Invoke(null, parameters) as Task<TResult>;
+        TResult? result = await (entryPoint.Invoke(null, parameters) as Task<TResult>)!;
 
-        return task!;
+        context.Unload();
+        return result;
     }
 
     public MethodInfo GetEntryPoint(Assembly assembly)
