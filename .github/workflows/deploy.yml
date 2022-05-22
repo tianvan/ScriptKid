@@ -1,4 +1,4 @@
-name: "CI"
+name: "deploy"
 on:
   push:
     # Publish `master` as Docker `latest` image.
@@ -24,7 +24,7 @@ on:
 env:
   REGISTRY: ghcr.io
   SECRET_NAME: ghcr
-  IMAGE_NAME: ScriptKit
+  IMAGE_NAME: script-kid
 
 jobs:
   # Push image to GitHub Packages.
@@ -97,9 +97,7 @@ jobs:
         with:
           namespace: default
           manifests: |
-            example/ScriptKitExample/Manifests/deployment.yml
-            exampl/ScriptKitExample/Manifests/service.yml
-            example/ScriptKitExample/Manifests/ingress.yml
+            example/ScriptKitExample/deploy.yml
           images: ${{ needs.push.outputs.image_id }}:${{ needs.push.outputs.short_sha }}
           imagepullsecrets: |
             ${{ env.SECRET_NAME }}
