@@ -19,12 +19,14 @@ public class CompilationInfoStorage : ICompilationInfoStorage
 
     public ValueTask<bool> TryGetAsync(string scriptDigest, out Stream? assemblyStream)
     {
+        EnsureScriptsFolderExists();
+
         var path = Path.Combine(_scriptEngineOptions.ScriptsPath, scriptDigest);
         if (!File.Exists(path))
         {
             assemblyStream = null;
 
-            _logger.LogWarning($"Script not found: {path}");
+            _logger.LogDebug($"Script not found: {path}");
 
             return new ValueTask<bool>(false);
         }
@@ -33,9 +35,16 @@ public class CompilationInfoStorage : ICompilationInfoStorage
         return new ValueTask<bool>(true);
     }
 
+    private void EnsureScriptsFolderExists()
+    {
+        Directory.CreateDirectory(_scriptEngineOptions.ScriptsPath);
+    }
+
     [MethodImpl(MethodImplOptions.Synchronized)]
     public ValueTask<bool> TrySaveAsync(CompilationInfo compilationInfo)
     {
+        EnsureScriptsFolderExists();
+
         var path = Path.Combine(_scriptEngineOptions.ScriptsPath, compilationInfo.ScriptDigest);
         if (File.Exists(path))
         {

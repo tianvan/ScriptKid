@@ -48,7 +48,7 @@ public class ScriptEngine : IScriptEngine
             throw new InvalidOperationException("Save CompilationInfo failed.");
         }
 
-        return await RunAsyncCore<TResult>(assemblyStream!, globals);
+        return await RunAsyncCore<TResult>(compilationSteam, globals);
     }
 
     private MemoryStream Compile<TResult>(string formattedScript, object? globals)

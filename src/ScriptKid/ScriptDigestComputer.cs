@@ -10,6 +10,6 @@ public class ScriptDigestComputer : IScriptDigestComputer
 
         using var sha = SHA256.Create();
         var bytes = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(formattedScript));
-        return Convert.ToBase64String(bytes);
+        return Convert.ToHexString(bytes);
     }
 }

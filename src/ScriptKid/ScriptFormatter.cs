@@ -6,6 +6,6 @@ internal class ScriptFormatter : IScriptFormatter
     {
         if (string.IsNullOrWhiteSpace(originalScript)) throw new ArgumentException($"“{nameof(originalScript)}”不能为 null 或空白。", nameof(originalScript));
 
-        throw new NotImplementedException();
+        return originalScript;
     }
 }
