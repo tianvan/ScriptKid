@@ -8,7 +8,7 @@
     }
   },
   "profiles": {
-    "ScriptKitExample": {
+    "ScriptKidExample": {
       "commandName": "Project",
       "launchBrowser": true,
       "environmentVariables": {

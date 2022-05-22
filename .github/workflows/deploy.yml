@@ -35,7 +35,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Build image
-        run: docker build . --file ./example/ScriptKitExample/Dockerfile --tag $IMAGE_NAME
+        run: docker build . --file ./example/ScriptKidExample/Dockerfile --tag $IMAGE_NAME
 
       - name: Log into GitHub Container Registry
         # TODO: Create a PAT with `read:packages` and `write:packages` scopes and save it as an Actions secret `CR_PAT`
@@ -97,7 +97,7 @@ jobs:
         with:
           namespace: default
           manifests: |
-            example/ScriptKitExample/deploy.yml
+            example/ScriptKidExample/deploy.yml
           images: ${{ needs.push.outputs.image_id }}:${{ needs.push.outputs.short_sha }}
           imagepullsecrets: |
             ${{ env.SECRET_NAME }}
