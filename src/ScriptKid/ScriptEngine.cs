@@ -38,8 +38,7 @@ public class ScriptEngine : IScriptEngine
             return await RunAsyncCore<TResult>(assemblyStream!, globals);
         }
 
-        MemoryStream compilationSteam = Compile<TResult>(formattedScript, globals);
-
+        using MemoryStream compilationSteam = Compile<TResult>(formattedScript, globals);
         var compilationInfo = new CompilationInfo(digest, compilationSteam.ToArray());
         var saved = await _compilationInfoStorage.TrySaveAsync(compilationInfo);
         if (!saved)
@@ -64,12 +63,14 @@ public class ScriptEngine : IScriptEngine
         return stream;
     }
 
-    private Task<TResult> RunAsyncCore<TResult>(Stream AssemblyStream, object? globals)
+    private Task<TResult> RunAsyncCore<TResult>(Stream assemblyStream, object? globals)
     {
-        if (AssemblyStream is null) throw new ArgumentNullException(nameof(AssemblyStream));
+        if (assemblyStream is null) throw new ArgumentNullException(nameof(assemblyStream));
 
         var context = new AssemblyLoadContext(Guid.NewGuid().ToString(), true);
-        Assembly assembly = context.LoadFromStream(AssemblyStream);
+        Assembly assembly = context.LoadFromStream(assemblyStream);
+        assemblyStream.Dispose();
+
         MethodInfo entryPoint = GetEntryPoint(assembly);
 
         var parameters = new object[]
