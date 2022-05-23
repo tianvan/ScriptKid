@@ -29,9 +29,16 @@ public class ScriptEngine : IScriptEngine
     public async Task<TResult> RunAsync<TResult>(string script, object? globals = default)
     {
         if (string.IsNullOrWhiteSpace(script)) throw new ArgumentException($"“{nameof(script)}”不能为 null 或空白。", nameof(script));
+        if (globals is not null)
+        {
+            if (globals.GetType().GetCustomAttribute<CompilerGeneratedAttribute>() is not null)
+            {
+                throw new ArgumentException($"“{nameof(globals)}”不能是编译器生成的类型。", nameof(globals));
+            }
+        }
 
         var formattedScript = _scriptFormatter.Format(script);
-        var digest = _scriptDigestComputer.ComputeDigest(formattedScript);
+        var digest = _scriptDigestComputer.ComputeDigest(formattedScript, globals);
 
         var has = await _compilationInfoStorage.TryGetAsync(digest, out Stream? assemblyStream);
         if (has)

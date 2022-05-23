@@ -21,7 +21,7 @@ public class CompilationInfoStorage : ICompilationInfoStorage
     {
         EnsureScriptsFolderExists();
 
-        var path = Path.Combine(_scriptEngineOptions.ScriptsPath, scriptDigest);
+        var path = Path.Combine(_scriptEngineOptions.ScriptsPath, scriptDigest + ".dll");
         if (!File.Exists(path))
         {
             assemblyStream = null;
@@ -45,7 +45,7 @@ public class CompilationInfoStorage : ICompilationInfoStorage
     {
         EnsureScriptsFolderExists();
 
-        var path = Path.Combine(_scriptEngineOptions.ScriptsPath, compilationInfo.ScriptDigest);
+        var path = Path.Combine(_scriptEngineOptions.ScriptsPath, compilationInfo.ScriptDigest + ".dll");
         if (File.Exists(path))
         {
             _logger.LogWarning($"Script already exists: {path}");
