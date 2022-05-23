@@ -27,7 +27,7 @@
     private Timer? _timer;
 
     [Parameter]
-    public string? Script { get; set; }=@"return ""Hello World"";";
+    public string? Script { get; set; }=@"return $""Hello {Data}!"";";
 
     [Parameter]
     public string? Error { get; set; }
@@ -69,10 +69,17 @@
 
         try
         {
-            var result= await scriptEngine.RunAsync<object>(Script);
+            var result = await scriptEngine.RunAsync<object>(Script,new Globals());
             if (result != null)
             {
-                Result = JsonSerializer.Serialize(result);
+                if(result is string content)
+                {
+                    Result = content;
+                }
+                else
+                {
+                    Result = JsonSerializer.Serialize(result);
+                }
             }
         }
         catch (Exception exception)
