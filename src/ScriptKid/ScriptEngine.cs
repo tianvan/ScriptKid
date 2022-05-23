@@ -26,7 +26,7 @@ public class ScriptEngine : IScriptEngine
         _logger = logger;
     }
 
-    public async Task<TResult> RunAsync<TResult>(string script, object? globals = default)
+    public async Task<TResult?> RunAsync<TResult>(string script, object? globals = default, CancellationToken cancellationToken = default)
     {
         if (string.IsNullOrWhiteSpace(script)) throw new ArgumentException($"“{nameof(script)}”不能为 null 或空白。", nameof(script));
         if (globals is not null)
@@ -43,7 +43,7 @@ public class ScriptEngine : IScriptEngine
         var has = await _compilationInfoStorage.TryGetAsync(digest, out Stream? assemblyStream);
         if (has)
         {
-            return await RunAsyncCore<TResult>(assemblyStream!, globals);
+            return await RunAsyncCore<TResult>(assemblyStream!, globals, cancellationToken);
         }
 
         using MemoryStream compilationSteam = Compile<TResult>(formattedScript, globals);
@@ -55,12 +55,16 @@ public class ScriptEngine : IScriptEngine
             throw new InvalidOperationException("Save CompilationInfo failed.");
         }
 
-        return await RunAsyncCore<TResult>(compilationSteam, globals);
+        return await RunAsyncCore<TResult>(compilationSteam, globals, cancellationToken);
     }
 
     private MemoryStream Compile<TResult>(string formattedScript, object? globals)
     {
-        ScriptOptions? scriptOptions = ScriptOptions.Default.WithOptimizationLevel(OptimizationLevel.Release);
+        ScriptOptions? scriptOptions = ScriptOptions.Default
+            .WithOptimizationLevel(OptimizationLevel.Release)
+            .WithReferences(typeof(Task).GetTypeInfo().Assembly, typeof(TResult).GetTypeInfo().Assembly)
+            .WithImports("System", "System.Threading.Tasks");
+
         Script<TResult> script = globals is null
             ? CSharpScript.Create<TResult>(formattedScript, scriptOptions)
             : CSharpScript.Create<TResult>(formattedScript, scriptOptions, globals!.GetType());
@@ -73,7 +77,7 @@ public class ScriptEngine : IScriptEngine
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]
-    private async Task<TResult> RunAsyncCore<TResult>(Stream assemblyStream, object? globals)
+    private async Task<TResult?> RunAsyncCore<TResult>(Stream assemblyStream, object? globals, CancellationToken cancellationToken)
     {
         if (assemblyStream is null) throw new ArgumentNullException(nameof(assemblyStream));
 
@@ -87,7 +91,9 @@ public class ScriptEngine : IScriptEngine
         {
             new object?[] { globals, null }
         };
-        TResult? result = await (entryPoint.Invoke(null, parameters) as Task<TResult>)!;
+        TResult? result = await (entryPoint.Invoke(null, parameters) as Task<TResult?>)!
+            .WithCancellation(cancellationToken)
+            .ConfigureAwait(false);
 
         context.Unload();
         return result;

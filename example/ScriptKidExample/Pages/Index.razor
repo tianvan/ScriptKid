@@ -4,7 +4,7 @@
 
 <div class="mb-3">
   <label for="script" class="form-label">Script</label>
-  <textarea class="form-control" rows="25" id="script" @bind="@Script" />
+  <textarea class="form-control" rows="20" id="script" @bind="@Script" />
 </div>
 
 <div class="alert alert-primary" role="alert" hidden="@string.IsNullOrWhiteSpace(Result)">
@@ -13,6 +13,11 @@
 
 <div class="alert alert-danger" role="alert" hidden=@string.IsNullOrWhiteSpace(Error)>
     @Error
+</div>
+
+<div class="mb-3">
+  <label for="timeout" class="form-label">Timeout period, in seconds</label>
+  <input type="number" class="form-control" id="timeout" placeholder="Timeout period, in seconds" @bind="Timeout" />
 </div>
 
 <button type="button" class="btn btn-primary" @onclick="RunAsync">Run Script</button>
@@ -27,7 +32,9 @@
     private Timer? _timer;
 
     [Parameter]
-    public string? Script { get; set; }=@"return $""Hello {Data}!"";";
+    public string? Script { get; set; }=@"
+// await Task.Delay(TimeSpan.FromSeconds(10));
+return $""Hello {Data}!"";";
 
     [Parameter]
     public string? Error { get; set; }
@@ -40,6 +47,9 @@
 
     [Parameter]
     public string? GCMemory{ get; set; }
+
+    [Parameter]
+    public int Timeout { get; set; } = 10;
 
     protected override async Task OnInitializedAsync()
     {
@@ -69,7 +79,7 @@
 
         try
         {
-            var result = await scriptEngine.RunAsync<object>(Script,new Globals());
+            var result = await scriptEngine.RunAsync<object>(Script,new Globals(),new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
             if (result != null)
             {
                 if(result is string content)
