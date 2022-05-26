@@ -1,11 +1,15 @@
-﻿namespace ScriptKid;
+﻿using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace ScriptKid;
 
 internal class ScriptFormatter : IScriptFormatter
 {
     public string Format(string originalScript)
     {
-        if (string.IsNullOrWhiteSpace(originalScript)) throw new ArgumentException($"“{nameof(originalScript)}”不能为 null 或空白。", nameof(originalScript));
-
-        return originalScript;
+        SyntaxTree? synaxTree = CSharpSyntaxTree.ParseText(originalScript);
+        CompilationUnitSyntax? root = synaxTree.GetCompilationUnitRoot();
+        return root.ToString();
     }
 }
