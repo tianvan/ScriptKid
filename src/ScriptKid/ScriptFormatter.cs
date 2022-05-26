@@ -14,6 +14,6 @@ internal class ScriptFormatter : IScriptFormatter
         if (errors.Any()) throw new ArgumentException($"Invalid script, {string.Join(',', errors.Select(x => x.GetMessage()))}", nameof(originalScript));
 
         CompilationUnitSyntax? root = synaxTree.GetCompilationUnitRoot();
-        return root.ToString();
+        return root.Members.ToString();
     }
 }

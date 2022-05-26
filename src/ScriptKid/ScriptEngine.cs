@@ -1,6 +1,5 @@
 ﻿using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Runtime.Loader;
 
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Scripting;
@@ -81,7 +80,7 @@ public class ScriptEngine : IScriptEngine
     {
         if (assemblyStream is null) throw new ArgumentNullException(nameof(assemblyStream));
 
-        var context = new AssemblyLoadContext(Guid.NewGuid().ToString(), true);
+        var context = new CollectibleAssemblyLoadContext();
         Assembly assembly = context.LoadFromStream(assemblyStream);
         assemblyStream.Dispose();
 
