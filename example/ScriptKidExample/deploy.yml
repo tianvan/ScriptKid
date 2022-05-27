@@ -14,7 +14,7 @@ spec:
         app: script-kid
     spec:
       volumes:
-        - name: diagnostics
+        - name: diag
           emptyDir: {}
       imagePullSecrets:
         - name: ghcr
