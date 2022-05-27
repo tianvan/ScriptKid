@@ -22,19 +22,30 @@ spec:
         - name: script-kid
           image: ghcr.io/tianvan/script-kid:latest
           imagePullPolicy: Always
-          ports:
-            - containerPort: 80
+          env:
+            - name: ASPNETCORE_URLS
+              value: http://+:80
+            - name: DOTNET_DiagnosticPorts
+              value: /diagnostics/port.sock
           volumeMounts:
-            - mountPath: /tmp
-              name: diagnostics
+            - mountPath: /diag
+              name: diag
         - name: monitor
           image: mcr.microsoft.com/dotnet/monitor
           imagePullPolicy: Always
-          ports:
-            - containerPort: 52323
+          args: ["--no-auth"]
+          env:
+            - name: DOTNETMONITOR_DiagnosticPort__ConnectionMode
+              value: Listen
+            - name: DOTNETMONITOR_DiagnosticPort__EndpointName
+              value: /diag/port.sock
+            - name: DOTNETMONITOR_Storage__DumpTempFolder
+              value: /diag/dumps
+            - name: DOTNETMONITOR_Urls
+              value: http://localhost:52323
           volumeMounts:
-            - mountPath: /tmp
-              name: diagnostics
+            - mountPath: /diag
+              name: diag
 ---
 apiVersion: v1
 kind: Service
