@@ -22,10 +22,6 @@ spec:
         - name: script-kid
           image: ghcr.io/tianvan/script-kid:latest
           imagePullPolicy: Always
-          resources:
-            limits:
-              cpu: 250m
-              memory: 512Mi
           ports:
             - containerPort: 80
           volumeMounts:
@@ -39,10 +35,6 @@ spec:
           volumeMounts:
             - mountPath: /tmp
               name: diagnostics
-          resources:
-            limits:
-              cpu: 250m
-              memory: 512Mi
 ---
 apiVersion: v1
 kind: Service
