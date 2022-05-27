@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: script-kid
   labels:
-      app: script-kid
+    app: script-kid
 spec:
   selector:
     matchLabels:
@@ -13,17 +13,37 @@ spec:
       labels:
         app: script-kid
     spec:
+      volumes:
+        - name: diagnostics
+          emptyDir: {}
       imagePullSecrets:
-          - name: ghcr
+        - name: ghcr
       containers:
-      - name: script-kid
-        image: ghcr.io/tianvan/script-kid:latest
-        imagePullPolicy: Always
-        ports:
-        - containerPort: 80
-
+        - name: script-kid
+          image: ghcr.io/tianvan/script-kid:latest
+          imagePullPolicy: Always
+          resources:
+            limits:
+              cpu: 250m
+              memory: 512Mi
+          ports:
+            - containerPort: 80
+          volumeMounts:
+            - mountPath: /tmp
+              name: diagnostics
+        - name: monitor
+          image: mcr.microsoft.com/dotnet/monitor
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 52323
+          volumeMounts:
+            - mountPath: /tmp
+              name: diagnostics
+          resources:
+            limits:
+              cpu: 250m
+              memory: 512Mi
 ---
-
 apiVersion: v1
 kind: Service
 metadata:
@@ -32,11 +52,10 @@ spec:
   selector:
     app: script-kid
   ports:
-  - port: 80
-    targetPort: 80
+    - port: 80
+      targetPort: 80
 
 ---
-
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
@@ -51,13 +70,12 @@ spec:
         paths:
           - backend:
               service:
-                  name: script-kid
-                  port:
-                      number: 80
+                name: script-kid
+                port:
+                  number: 80
             pathType: Prefix
             path: /
   tls:
     - hosts:
         - script-kid.tianvan.com
       secretName: script-kid-tls
-
