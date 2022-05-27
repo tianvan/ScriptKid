@@ -45,19 +45,21 @@ public class ScriptEngine : IScriptEngine
             return await RunAsyncCore<TResult>(assemblyStream!, globals, cancellationToken);
         }
 
-        using MemoryStream compilationSteam = Compile<TResult>(formattedScript, globals);
-        var compilationInfo = new CompilationInfo(digest, compilationSteam.ToArray());
+        (MemoryStream dllStream, MemoryStream pdbStream) = Compile<TResult>(formattedScript, globals);
+        var compilationInfo = new CompilationInfo(digest, dllStream.ToArray(), pdbStream.ToArray());
         var saved = await _compilationInfoStorage.TrySaveAsync(compilationInfo);
+        pdbStream.Dispose();
+
         if (!saved)
         {
             _logger.LogWarning("Save CompilationInfo failed. the {compilation} is existed.", digest);
             throw new InvalidOperationException("Save CompilationInfo failed.");
         }
 
-        return await RunAsyncCore<TResult>(compilationSteam, globals, cancellationToken);
+        return await RunAsyncCore<TResult>(dllStream, globals, cancellationToken);
     }
 
-    private MemoryStream Compile<TResult>(string formattedScript, object? globals)
+    private (MemoryStream dllStream, MemoryStream pdbStream) Compile<TResult>(string formattedScript, object? globals)
     {
         ScriptOptions? scriptOptions = ScriptOptions.Default
             .WithOptimizationLevel(OptimizationLevel.Release)
@@ -69,10 +71,12 @@ public class ScriptEngine : IScriptEngine
             : CSharpScript.Create<TResult>(formattedScript, scriptOptions, globals!.GetType());
 
         Compilation compilation = script.GetCompilation();
-        var stream = new MemoryStream();
-        compilation.Emit(stream);
-        stream.Position = 0;
-        return stream;
+        var dllStream = new MemoryStream();
+        var pdbStream = new MemoryStream();
+        compilation.Emit(dllStream, pdbStream);
+        dllStream.Position = 0;
+        pdbStream.Position = 0;
+        return (dllStream, pdbStream);
     }
 
     [MethodImpl(MethodImplOptions.NoInlining)]

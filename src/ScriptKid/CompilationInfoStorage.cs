@@ -20,7 +20,7 @@ public class CompilationInfoStorage : ICompilationInfoStorage
     {
         EnsureScriptsFolderExists();
 
-        var path = Path.Combine(_scriptEngineOptions.ScriptsPath, scriptDigest + ".dll");
+        var path = Path.Combine(_scriptEngineOptions.ScriptsPath, scriptDigest + ".Dll");
         if (!File.Exists(path))
         {
             assemblyStream = null;
@@ -44,16 +44,20 @@ public class CompilationInfoStorage : ICompilationInfoStorage
     {
         EnsureScriptsFolderExists();
 
-        var path = Path.Combine(_scriptEngineOptions.ScriptsPath, compilationInfo.ScriptDigest + ".dll");
-        if (File.Exists(path))
+        var dllPath = Path.Combine(_scriptEngineOptions.ScriptsPath, compilationInfo.ScriptDigest + ".Dll");
+        if (File.Exists(dllPath))
         {
-            _logger.LogWarning($"Script already exists: {path}");
+            _logger.LogWarning($"Script already exists: {dllPath}");
 
             return new ValueTask<bool>(false);
         }
 
-        using var fileStream = new FileStream(path, FileMode.Create);
-        fileStream.Write(compilationInfo.AssemblyBinary);
+        using var dllFileStream = new FileStream(dllPath, FileMode.Create);
+        dllFileStream.Write(compilationInfo.Dll);
+
+        var pdbPath = Path.Combine(_scriptEngineOptions.ScriptsPath, compilationInfo.ScriptDigest + ".Pdb");
+        using var pdbFileStream = new FileStream(pdbPath, FileMode.Create);
+
         return new ValueTask<bool>(true);
     }
 }
